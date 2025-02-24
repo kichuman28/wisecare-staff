@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WiseCare Staff](assets/images/logo.png)
+<img src="assets/logo/logo.png" width="200" alt="WiseCare Staff"/>
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6.0-blue.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -44,7 +44,7 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/wisecare-staff.git
+   git clone https://github.com/kichuman28/wisecare-staff.git
    cd wisecare-staff
    ```
 
@@ -105,7 +105,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [YourGithub](https://github.com/yourusername)
+- **Adwaith Jayasankar** - *Initial work* - [YourGithub](https://github.com/kichuman28)
+- **Abel Boby** - *Initial work* - [YourGithub](https://github.com/abelboby)
 
 ## 🙏 Acknowledgments
 
