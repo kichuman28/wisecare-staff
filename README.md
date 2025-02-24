@@ -1,15 +1,15 @@
 # 🌟 WiseCare Staff App
 
-<div align="center">
+<p align="center">
+  <img src="assets/logo/logo_no_text.png" alt="Wise Care Banner" width="150"/>
+</p>
 
-<img src="assets/logo/logo_no_text.png" alt="Wise Care Banner" width="150" align="center"/>
+<div align="center">
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6.0-blue.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
 *A powerful Flutter application for healthcare staff management and coordination*
-
 </div>
 
 ## 🚀 Features
