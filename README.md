@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="assets/logo/logo.png" width="200" alt="WiseCare Staff"/>
+<img src="assets/logo/logo_no_text.png" alt="Wise Care Banner" width="150" align="center"/>
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6.0-blue.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -70,9 +70,12 @@ Before you begin, ensure you have the following installed:
 <div align="center">
 <table>
   <tr>
-    <td><img src="assets/screenshots/login.png" width="200"/></td>
-    <td><img src="assets/screenshots/dashboard.png" width="200"/></td>
-    <td><img src="assets/screenshots/map.png" width="200"/></td>
+    <td><img src="screenshots/dashboard screen.jpg" width="200" alt="Dashboard Screen"/></td>
+    <td><img src="screenshots/tasks screen.jpg" width="200" alt="Tasks Screen"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/patients screen.jpg" width="200" alt="Patients Screen"/></td>
+    <td><img src="screenshots/profile screen.jpg" width="200" alt="Profile Screen"/></td>
   </tr>
 </table>
 </div>
