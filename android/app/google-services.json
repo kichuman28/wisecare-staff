@@ -1,0 +1,100 @@
+{
+  "project_info": {
+    "project_number": "623753415843",
+    "project_id": "wise-care-app",
+    "storage_bucket": "wise-care-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:623753415843:android:6d304612ac66ad056e4316",
+        "android_client_info": {
+          "package_name": "com.example.wise_care"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "623753415843-ivvqll7olvi7gilhv52javkn8ceh7t41.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wise_care",
+            "certificate_hash": "2fae7e916adee40b9aa743f98a208761f9991abc"
+          }
+        },
+        {
+          "client_id": "623753415843-kua3pfmhm5atq1hl6v7igjl91buvk7va.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wise_care",
+            "certificate_hash": "21162489da689bdfa6f6b11db79575407f29ae6c"
+          }
+        },
+        {
+          "client_id": "623753415843-l7ci301u18sn7sqlqr58op73eqgi3gv1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wise_care",
+            "certificate_hash": "a8f992573fbfbee93e53df6fd3e11a00b67fec3e"
+          }
+        },
+        {
+          "client_id": "623753415843-b1k07cc5h1rij3u3rknl5425d0rdg979.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdmU5fBwbW52G68moS7QPPf7uUppaatnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "623753415843-b1k07cc5h1rij3u3rknl5425d0rdg979.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:623753415843:android:b31f826e0a238a646e4316",
+        "android_client_info": {
+          "package_name": "com.example.wisecare_staff"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "623753415843-jvpts61sspm6ic61heevol4ced4icl8j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wisecare_staff",
+            "certificate_hash": "21162489da689bdfa6f6b11db79575407f29ae6c"
+          }
+        },
+        {
+          "client_id": "623753415843-b1k07cc5h1rij3u3rknl5425d0rdg979.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdmU5fBwbW52G68moS7QPPf7uUppaatnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "623753415843-b1k07cc5h1rij3u3rknl5425d0rdg979.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

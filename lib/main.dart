@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:wisecare_staff/core/theme/app_theme.dart';
-import 'package:wisecare_staff/ui/screens/main_screen.dart';
+import 'package:wisecare_staff/ui/screens/auth/login_screen.dart';
 import 'package:wisecare_staff/provider/auth_provider.dart';
 import 'package:wisecare_staff/provider/task_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -25,7 +29,8 @@ class WiseCareStaffApp extends StatelessWidget {
     return MaterialApp(
       title: 'Wise Care Staff',
       theme: AppTheme.lightTheme,
-      home: const MainScreen(),
+      debugShowCheckedModeBanner: false,
+      home: const LoginScreen(),
     );
   }
 }
