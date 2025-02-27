@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:wisecare_staff/core/theme/app_theme.dart';
 import 'package:wisecare_staff/provider/auth_provider.dart';
 import 'package:wisecare_staff/ui/screens/auth/onboarding_screen.dart';
+import 'package:wisecare_staff/ui/screens/main_screen.dart';
 import 'package:wisecare_staff/ui/widgets/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -35,12 +36,23 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (mounted && authProvider.isAuthenticated) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const OnboardingScreen(),
-            ),
-          );
+          // If user has a role, they've completed onboarding
+          if (authProvider.userRole != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainScreen(),
+              ),
+            );
+          } else {
+            // If no role, send to onboarding
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const OnboardingScreen(),
+              ),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

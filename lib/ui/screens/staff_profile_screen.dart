@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:wisecare_staff/core/theme/app_theme.dart';
+import 'package:wisecare_staff/provider/auth_provider.dart';
+import 'package:wisecare_staff/ui/screens/auth/login_screen.dart';
+import 'package:wisecare_staff/ui/widgets/custom_card.dart';
 
 class StaffProfileScreen extends StatelessWidget {
   const StaffProfileScreen({super.key});
@@ -7,6 +11,7 @@ class StaffProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,7 +50,7 @@ class StaffProfileScreen extends StatelessWidget {
                     radius: 50,
                     backgroundColor: AppColors.primary.withOpacity(0.1),
                     child: Text(
-                      'JD',
+                      authProvider.userName?.substring(0, 2).toUpperCase() ?? 'NA',
                       style: theme.textTheme.displayMedium?.copyWith(
                         color: AppColors.primary,
                       ),
@@ -53,7 +58,7 @@ class StaffProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'John Doe',
+                    authProvider.userName ?? 'Staff Member',
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
@@ -67,43 +72,12 @@ class StaffProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Medical Assistant',
+                      authProvider.userRole?.toUpperCase() ?? 'STAFF',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildStatItem(
-                        context,
-                        'Tasks\nCompleted',
-                        '156',
-                      ),
-                      Container(
-                        height: 40,
-                        width: 1,
-                        color: AppColors.tertiary,
-                      ),
-                      _buildStatItem(
-                        context,
-                        'Patient\nRatings',
-                        '4.8',
-                      ),
-                      Container(
-                        height: 40,
-                        width: 1,
-                        color: AppColors.tertiary,
-                      ),
-                      _buildStatItem(
-                        context,
-                        'Years of\nExperience',
-                        '5+',
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -114,40 +88,61 @@ class StaffProfileScreen extends StatelessWidget {
                 children: [
                   _buildProfileSection(
                     context,
+                    'Email',
+                    Icons.email_outlined,
+                    authProvider.userEmail ?? 'Not available',
+                  ),
+                  _buildProfileSection(
+                    context,
                     'Working Hours',
                     Icons.access_time_outlined,
                     '9:00 AM - 5:00 PM',
                   ),
                   _buildProfileSection(
                     context,
-                    'Contact Info',
-                    Icons.phone_outlined,
-                    '+1 234 567 8900',
-                  ),
-                  _buildProfileSection(
-                    context,
-                    'Email',
-                    Icons.email_outlined,
-                    'john.doe@wisecare.com',
-                  ),
-                  _buildProfileSection(
-                    context,
                     'Settings',
                     Icons.settings_outlined,
                     'App preferences, notifications',
-                    showDivider: false,
                   ),
                   const SizedBox(height: 24),
-                  OutlinedButton(
-                    onPressed: () {
-                      // Handle logout
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary),
-                      minimumSize: const Size(double.infinity, 48),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        try {
+                          await authProvider.logout();
+                          if (context.mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to logout: ${e.toString()}'),
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Logout'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                    child: const Text('Logout'),
                   ),
                 ],
               ),
@@ -158,70 +153,59 @@ class StaffProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value) {
-    final theme = Theme.of(context);
-
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium,
-        ),
-      ],
-    );
-  }
-
   Widget _buildProfileSection(
     BuildContext context,
     String title,
     IconData icon,
-    String subtitle, {
+    String value, {
     bool showDivider = true,
   }) {
-    final theme = Theme.of(context);
-
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: AppColors.primary,
-              size: 24,
-            ),
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.text,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+            ],
           ),
-          title: Text(
-            title,
-            style: theme.textTheme.titleMedium,
-          ),
-          subtitle: Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium,
-          ),
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: AppColors.textSecondary,
-          ),
-          onTap: () {
-            // Handle section tap
-          },
-        ),
-        if (showDivider) const Divider(),
-      ],
+          if (showDivider) const Divider(height: 32),
+        ],
+      ),
     );
   }
 } 

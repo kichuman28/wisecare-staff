@@ -23,23 +23,35 @@ class AuthService {
     required String name,
     required String email,
     required String role,
+    required String phone,
+    required String address,
+    required String emergencyContact,
+    required String emergencyContactName,
+    required String experience,
+    required String preferredShift,
+    required String shiftTiming,
   }) async {
     try {
-      await _firestore.collection('users').doc(userId).set({
+      final userData = {
         'name': name,
         'email': email,
         'role': role,
+        'phone': phone,
+        'address': address,
+        'emergency_contact': emergencyContact,
+        'emergency_contact_name': emergencyContactName,
+        'experience': experience,
+        'preferred_shift': preferredShift,
+        'shift_timing': shiftTiming,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      // Add to users collection
+      await _firestore.collection('users').doc(userId).set(userData);
 
       // Also add to role-specific collection
-      await _firestore.collection(role).doc(userId).set({
-        'name': name,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection(role).doc(userId).set(userData);
     } catch (e) {
       throw Exception('Failed to create user in Firestore: ${e.toString()}');
     }

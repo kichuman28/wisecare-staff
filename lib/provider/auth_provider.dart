@@ -65,6 +65,13 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String role,
+    required String phone,
+    required String address,
+    required String emergencyContact,
+    required String emergencyContactName,
+    required String experience,
+    required String preferredShift,
+    required String shiftTiming,
   }) async {
     try {
       _isLoading = true;
@@ -75,6 +82,13 @@ class AuthProvider extends ChangeNotifier {
         name: name,
         email: email,
         role: role,
+        phone: phone,
+        address: address,
+        emergencyContact: emergencyContact,
+        emergencyContactName: emergencyContactName,
+        experience: experience,
+        preferredShift: preferredShift,
+        shiftTiming: shiftTiming,
       );
 
       setAuthState(
