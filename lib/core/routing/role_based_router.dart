@@ -5,7 +5,7 @@ import 'package:wisecare_staff/ui/screens/roles/delivery/delivery_dashboard_scre
 class RoleBasedRouter {
   static Widget getHomeScreenForRole(String role) {
     switch (role.toLowerCase()) {
-      case 'responder':
+      case 'responders':
         return const ResponderDashboardScreen();
       case 'delivery':
         return const DeliveryDashboardScreen();

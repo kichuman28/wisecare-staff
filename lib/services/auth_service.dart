@@ -51,7 +51,8 @@ class AuthService {
       await _firestore.collection('users').doc(userId).set(userData);
 
       // Also add to role-specific collection
-      await _firestore.collection(role).doc(userId).set(userData);
+      final collectionName = role == 'responder' ? 'responders' : role;
+      await _firestore.collection(collectionName).doc(userId).set(userData);
     } catch (e) {
       throw Exception('Failed to create user in Firestore: ${e.toString()}');
     }

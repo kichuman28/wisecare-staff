@@ -42,11 +42,11 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(
-              role == 'responder'
+              role == 'responders'
                   ? Icons.local_hospital_outlined
                   : Icons.delivery_dining_outlined,
             ),
-            label: role == 'responder' ? 'Emergencies' : 'Deliveries',
+            label: role == 'responders' ? 'Emergencies' : 'Deliveries',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.account_circle_outlined),

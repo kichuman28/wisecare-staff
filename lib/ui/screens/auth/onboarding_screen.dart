@@ -20,7 +20,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _emergencyContactController = TextEditingController();
   final _emergencyContactNameController = TextEditingController();
   final _experienceController = TextEditingController();
-  String _selectedRole = 'responder';
+  String _selectedRole = 'responders';
   String _selectedShift = 'morning';
 
   final List<String> _shifts = ['morning', 'afternoon', 'night'];
@@ -250,7 +250,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   'Responder',
                   'Emergency response and medical assistance',
                   Icons.local_hospital_outlined,
-                  'responder',
+                  'responders',
                 ),
                 const SizedBox(height: 12),
                 _buildRoleSelector(
