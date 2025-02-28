@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:wisecare_staff/core/theme/app_theme.dart';
 import 'package:wisecare_staff/provider/auth_provider.dart';
 import 'package:wisecare_staff/ui/screens/auth/login_screen.dart';
+import 'package:wisecare_staff/ui/screens/edit_profile_screen.dart';
 import 'package:wisecare_staff/ui/widgets/custom_card.dart';
 
 class StaffProfileScreen extends StatefulWidget {
@@ -49,6 +50,20 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _navigateToEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EditProfileScreen(),
+      ),
+    );
+
+    // If profile was updated, refresh the profile data
+    if (result == true) {
+      _fetchUserProfile();
     }
   }
 
@@ -114,9 +129,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 child: IconButton(
                                   icon: const Icon(Icons.edit_outlined),
                                   color: AppColors.primary,
-                                  onPressed: () {
-                                    // Handle edit profile
-                                  },
+                                  onPressed: _navigateToEditProfile,
                                 ),
                               ),
                             ],
@@ -203,18 +216,21 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 'Email',
                                 Icons.email_outlined,
                                 authProvider.userEmail ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                               _buildInfoItem(
                                 context,
                                 'Phone',
                                 Icons.phone_outlined,
                                 userProfile?['phone'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                               _buildInfoItem(
                                 context,
                                 'Address',
                                 Icons.home_outlined,
                                 userProfile?['address'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                             ],
                           ),
@@ -228,18 +244,21 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 'Experience',
                                 Icons.work_outline,
                                 userProfile?['experience'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                               _buildInfoItem(
                                 context,
                                 'Preferred Shift',
                                 Icons.schedule_outlined,
                                 userProfile?['preferred_shift'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                               _buildInfoItem(
                                 context,
                                 'Shift Timing',
                                 Icons.access_time_outlined,
                                 userProfile?['shift_timing'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                             ],
                           ),
@@ -253,6 +272,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 'Contact Name',
                                 Icons.person_outline,
                                 userProfile?['emergency_contact_name'] ?? 'Not available',
+                                onTap: () => _navigateToEditProfile(),
                               ),
                               _buildInfoItem(
                                 context,
@@ -260,6 +280,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 Icons.phone_outlined,
                                 userProfile?['emergency_contact'] ?? 'Not available',
                                 showDivider: false,
+                                onTap: () => _navigateToEditProfile(),
                               ),
                             ],
                           ),
@@ -274,6 +295,9 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 Icons.notifications_outlined,
                                 'Manage notifications',
                                 showDivider: false,
+                                onTap: () {
+                                  // Handle notifications settings
+                                },
                               ),
                             ],
                           ),
@@ -376,56 +400,60 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     IconData icon,
     String value, {
     bool showDivider = true,
+    VoidCallback? onTap,
   }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 20,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: AppColors.text,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: AppColors.text,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      value,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ],
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: AppColors.textSecondary,
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        if (showDivider) const Divider(height: 1),
-      ],
+          if (showDivider) const Divider(height: 1),
+        ],
+      ),
     );
   }
 }

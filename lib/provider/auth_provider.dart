@@ -151,6 +151,48 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateUserProfile(Map<String, dynamic> updatedData) async {
+    if (_userId == null) return false;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _authService.updateUserProfile(
+        userId: _userId!,
+        updatedData: updatedData,
+      );
+
+      // Update local state with new data
+      if (_userProfile != null) {
+        _userProfile = {
+          ..._userProfile!,
+          ...updatedData,
+        };
+
+        // Update specific fields if they were changed
+        if (updatedData.containsKey('name')) {
+          _userName = updatedData['name'] as String?;
+        }
+        if (updatedData.containsKey('email')) {
+          _userEmail = updatedData['email'] as String?;
+        }
+        if (updatedData.containsKey('role')) {
+          _userRole = updatedData['role'] as String?;
+        }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error updating user profile: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     try {
       _isLoading = true;

@@ -58,6 +58,36 @@ class AuthService {
     }
   }
 
+  // Update user profile in Firestore
+  Future<void> updateUserProfile({
+    required String userId,
+    required Map<String, dynamic> updatedData,
+  }) async {
+    try {
+      // Add updatedAt timestamp
+      final dataToUpdate = {
+        ...updatedData,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // Get current user data to determine role
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data();
+      final role = userData?['role'] as String?;
+
+      // Update in users collection
+      await _firestore.collection('users').doc(userId).update(dataToUpdate);
+
+      // Also update in role-specific collection if role exists
+      if (role != null) {
+        final collectionName = role == 'responder' ? 'responders' : role;
+        await _firestore.collection(collectionName).doc(userId).update(dataToUpdate);
+      }
+    } catch (e) {
+      throw Exception('Failed to update user profile: ${e.toString()}');
+    }
+  }
+
   // Get user role from Firestore
   Future<String?> getUserRole(String userId) async {
     try {
