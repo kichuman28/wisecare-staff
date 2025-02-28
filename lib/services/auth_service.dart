@@ -68,8 +68,18 @@ class AuthService {
     }
   }
 
+  // Get complete user profile from Firestore
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      return doc.data();
+    } catch (e) {
+      throw Exception('Failed to get user profile: ${e.toString()}');
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
   }
-} 
+}

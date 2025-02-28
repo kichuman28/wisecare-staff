@@ -14,6 +14,37 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use addPostFrameCallback to ensure we don't update state during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUserProfile();
+    });
+  }
+
+  Future<void> _fetchUserProfile() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.fetchUserProfile();
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +59,21 @@ class _MainScreenState extends State<MainScreen> {
     // Get the appropriate home screen based on role
     final homeScreen = RoleBasedRouter.getHomeScreenForRole(role);
 
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       homeScreen,
       const StaffProfileScreen(),
     ];
 
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
@@ -42,9 +81,7 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(
-              role == 'responders'
-                  ? Icons.local_hospital_outlined
-                  : Icons.delivery_dining_outlined,
+              role == 'responders' ? Icons.local_hospital_outlined : Icons.delivery_dining_outlined,
             ),
             label: role == 'responders' ? 'Emergencies' : 'Deliveries',
           ),
@@ -56,4 +93,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-} 
+}
