@@ -5,6 +5,28 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  AuthService() {
+    // Set persistence to LOCAL for longer sessions
+    _setPersistence();
+  }
+
+  // Set Firebase Auth persistence to LOCAL
+  Future<void> _setPersistence() async {
+    try {
+      // This sets session persistence to LOCAL
+      // The user will remain logged in until they explicitly sign out
+      await _auth.setPersistence(Persistence.LOCAL);
+    } catch (e) {
+      // Ignore errors since this is just an enhancement
+      // The app will still work without this setting
+    }
+  }
+
+  // Get current authenticated user
+  Future<User?> getCurrentUser() async {
+    return _auth.currentUser;
+  }
+
   // Sign in with email and password
   Future<UserCredential> signInWithEmailAndPassword(String email, String password) async {
     try {

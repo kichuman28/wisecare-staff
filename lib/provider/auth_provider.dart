@@ -20,6 +20,33 @@ class AuthProvider extends ChangeNotifier {
   String? get userEmail => _userEmail;
   Map<String, dynamic>? get userProfile => _userProfile;
 
+  // Check if user is already logged in
+  Future<bool> checkCurrentUser() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      
+      if (currentUser != null) {
+        final userId = currentUser.uid;
+        final userRole = await _authService.getUserRole(userId);
+        final userProfile = await _authService.getUserProfile(userId);
+        
+        setAuthState(
+          true,
+          userId: userId,
+          userRole: userRole,
+          userName: userProfile?['name'] ?? currentUser.displayName,
+          userEmail: currentUser.email,
+          userProfile: userProfile,
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error checking current user: $e');
+      return false;
+    }
+  }
+
   void setAuthState(
     bool isAuthenticated, {
     String? userId,
