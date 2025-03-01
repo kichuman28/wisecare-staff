@@ -5,6 +5,7 @@ import 'package:wisecare_staff/core/theme/app_theme.dart';
 import 'package:wisecare_staff/ui/screens/auth/login_screen.dart';
 import 'package:wisecare_staff/provider/auth_provider.dart';
 import 'package:wisecare_staff/provider/task_provider.dart';
+import 'package:wisecare_staff/provider/sos_alert_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => SOSAlertProvider()),
       ],
       child: const WiseCareStaffApp(),
     ),
