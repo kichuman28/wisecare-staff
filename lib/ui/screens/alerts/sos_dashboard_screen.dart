@@ -150,13 +150,8 @@ class _SOSDashboardScreenState extends State<SOSDashboardScreen> with SingleTick
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Real-time updates active · Last update: $lastUpdatedText',
+                      'Last updated: $lastUpdatedText',
                       style: const TextStyle(fontSize: 12),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Responder ID: ${provider.responderId ?? "Unknown"}',
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                   ],
                 ),
