@@ -11,7 +11,8 @@ class ResponderDashboardScreen extends StatefulWidget {
   const ResponderDashboardScreen({super.key});
 
   @override
-  State<ResponderDashboardScreen> createState() => _ResponderDashboardScreenState();
+  State<ResponderDashboardScreen> createState() =>
+      _ResponderDashboardScreenState();
 }
 
 class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
@@ -27,23 +28,25 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   // Method to fetch assigned alerts with debug option
   Future<void> _getAssignedAlerts({bool debug = false}) async {
     final sosProvider = Provider.of<SOSAlertProvider>(context, listen: false);
-    
+
     if (debug) {
-      print('Debugging responder dashboard alerts...');
       // Add a slight delay to ensure provider is fully initialized
       await Future.delayed(Duration(milliseconds: 500));
     }
-    
+
     await sosProvider.fetchAssignedAlerts();
-    
+
     if (debug && mounted) {
       // Filter to get only assigned (not resolved) alerts
-      final assignedAlerts = sosProvider.alerts.where((alert) => alert.status == 'assigned').toList();
-      
+      final assignedAlerts = sosProvider.alerts
+          .where((alert) => alert.status == 'assigned')
+          .toList();
+
       if (assignedAlerts.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('No assigned emergencies found that need your attention.'),
+            content:
+                Text('No assigned emergencies found that need your attention.'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 5),
           ),
@@ -51,7 +54,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Found ${assignedAlerts.length} active emergencies requiring your attention'),
+            content: Text(
+                'Found ${assignedAlerts.length} active emergencies requiring your attention'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
           ),
@@ -64,7 +68,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -90,9 +94,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           children: [
             // Current status section
             _buildStatusSection(context),
-            
+
             const SizedBox(height: 24),
-            
+
             // Active SOS Alerts Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -105,7 +109,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SOSDashboardScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const SOSDashboardScreen()),
                     );
                   },
                   child: const Text('View All'),
@@ -114,9 +119,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             ),
             const SizedBox(height: 16),
             _buildSOSAlertSection(),
-            
+
             const SizedBox(height: 24),
-            
+
             // Mock static content from original design
             Text(
               'Recent Activity',
@@ -149,9 +154,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Training section
             Text(
               'Training & Resources',
@@ -165,14 +170,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   _buildResourceItem(
                     context,
                     title: 'CPR Refresher Course',
-                    description: 'Update your CPR skills with our latest techniques',
+                    description:
+                        'Update your CPR skills with our latest techniques',
                     icon: Icons.health_and_safety,
                   ),
                   const Divider(),
                   _buildResourceItem(
                     context,
                     title: 'Emergency Protocols',
-                    description: 'Review the latest emergency response protocols',
+                    description:
+                        'Review the latest emergency response protocols',
                     icon: Icons.menu_book,
                   ),
                   const Divider(),
@@ -195,22 +202,20 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     return Consumer<SOSAlertProvider>(
       builder: (context, provider, child) {
         // Only get assigned alerts - exclude resolved ones
-        final activeAlerts = provider.alerts.where(
-          (alert) => alert.status == 'assigned'
-        ).toList();
-        
-        final Color statusColor = activeAlerts.isNotEmpty 
-            ? Colors.orange
-            : Colors.green;
-        
-        final String statusText = activeAlerts.isNotEmpty 
+        final activeAlerts = provider.alerts
+            .where((alert) => alert.status == 'assigned')
+            .toList();
+
+        final Color statusColor =
+            activeAlerts.isNotEmpty ? Colors.orange : Colors.green;
+
+        final String statusText = activeAlerts.isNotEmpty
             ? 'You have ${activeAlerts.length} active ${activeAlerts.length == 1 ? 'emergency' : 'emergencies'}'
             : 'No active emergencies';
-            
-        final IconData statusIcon = activeAlerts.isNotEmpty 
-            ? Icons.warning_amber
-            : Icons.check_circle;
-        
+
+        final IconData statusIcon =
+            activeAlerts.isNotEmpty ? Icons.warning_amber : Icons.check_circle;
+
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -253,7 +258,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SOSDashboardScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const SOSDashboardScreen()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -274,14 +280,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     return Consumer<SOSAlertProvider>(
       builder: (context, provider, _) {
         // Get only assigned alerts (not resolved)
-        final alerts = provider.alerts.where((alert) => alert.status == 'assigned').toList();
-        
+        final alerts = provider.alerts
+            .where((alert) => alert.status == 'assigned')
+            .toList();
+
         // If no alerts found
         if (alerts.isEmpty) {
           return Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-            color: Colors.white,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
@@ -304,11 +312,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ),
                 SizedBox(height: 16),
                 Center(
-                child: Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
                         size: 60,
                         color: Colors.green,
                       ),
@@ -328,20 +336,20 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                           foregroundColor: Colors.white,
                         ),
                         child: Text('Refresh Alerts'),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ],
             ),
           );
         }
-        
+
         // Display available alerts
         return Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-          color: Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
@@ -380,7 +388,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       },
     );
   }
-  
+
   // Build individual alert item
   Widget _buildAlertItem(SOSAlertModel alert) {
     // Calculate time ago
@@ -388,7 +396,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     if (alert.createdAt != null) {
       final now = DateTime.now();
       final difference = now.difference(alert.createdAt!);
-      
+
       if (difference.inMinutes < 60) {
         timeAgo = '${difference.inMinutes} min ago';
       } else if (difference.inHours < 24) {
@@ -397,23 +405,24 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         timeAgo = '${difference.inDays} days ago';
       }
     }
-    
+
     // Format emergency type for display
     String emergencyType = alert.alertType.toUpperCase();
     IconData typeIcon = Icons.warning_amber;
     Color typeColor = Colors.orange;
-    
+
     if (emergencyType.contains('FALL')) {
       typeIcon = Icons.personal_injury;
       typeColor = Colors.red;
-    } else if (emergencyType.contains('HEART') || emergencyType.contains('CARDIAC')) {
+    } else if (emergencyType.contains('HEART') ||
+        emergencyType.contains('CARDIAC')) {
       typeIcon = Icons.favorite;
       typeColor = Colors.red;
     } else if (emergencyType.contains('MEDICAL')) {
       typeIcon = Icons.medical_services;
       typeColor = Colors.red;
     }
-    
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -435,52 +444,67 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
                   padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                     color: typeColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-              ),
+                  ),
                   child: Icon(typeIcon, color: typeColor, size: 30),
-              ),
+                ),
                 SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
                         emergencyType,
                         style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 4),
                       Text(
                         alert.userName,
                         style: TextStyle(fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 4),
-                      Text(
-                        alert.address.isNotEmpty ? alert.address : 'Location not available',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              size: 12, color: Colors.grey[600]),
+                          SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              alert.address.isNotEmpty
+                                  ? alert.address
+                                  : 'Location not available',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                      ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
             SizedBox(height: 12),
-                    Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+              children: [
                 Text(
                   timeAgo,
                   style: TextStyle(
@@ -488,21 +512,21 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     color: Colors.grey[600],
                   ),
                 ),
-                      Container(
+                Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
                     'URGENT',
-                          style: TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -585,7 +609,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                         child: Text(
                           location,
                           style: theme.textTheme.bodySmall,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -688,6 +712,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -708,4 +734,4 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       ),
     );
   }
-} 
+}

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class SOSAlertService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,21 +13,18 @@ class SOSAlertService {
   Future<void> debugResponderIdentity() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
-      print('No user is currently logged in');
       return;
     }
-    
-    print('Current Auth UID: $uid');
-    
+
     // Check if this UID exists in responders collection
     try {
-      final responderDoc = await _firestore.collection('responders').doc(uid).get();
+      final responderDoc =
+          await _firestore.collection('responders').doc(uid).get();
       if (responderDoc.exists) {
         final data = responderDoc.data();
-        print('Found responder in responders collection: ${data?['name']} with role ${data?['role']}');
+        debugPrint(
+            'Found responder in responders collection: ${data?['name']} with role ${data?['role']}');
       } else {
-        print('No responder found with this UID. Checking all responders...');
-        
         // Check all responders to find the current user by email
         final user = _auth.currentUser;
         if (user?.email != null) {
@@ -34,43 +32,16 @@ class SOSAlertService {
               .collection('responders')
               .where('email', isEqualTo: user!.email)
               .get();
-              
+
           if (querySnapshot.docs.isNotEmpty) {
             final matchingResponder = querySnapshot.docs.first;
-            print('Found responder by email: ${matchingResponder.data()['name']} with ID: ${matchingResponder.id}');
-            print('This differs from Auth UID. Should use Responder ID: ${matchingResponder.id} instead');
-          } else {
-            print('No responder found with email: ${user.email}');
+            debugPrint(
+                'Found responder by email: ${matchingResponder.data()['name']} with ID: ${matchingResponder.id}');
           }
         }
       }
     } catch (e) {
-      print('Error debugging responder identity: $e');
-    }
-    
-    // Check for assigned alerts to this UID
-    try {
-      final alertsSnapshot = await _firestore
-          .collection('sos_alerts')
-          .where('assignedTo', isEqualTo: uid)
-          .get();
-          
-      print('Found ${alertsSnapshot.docs.length} alerts assigned to Auth UID');
-      
-      // Check for all assigned alerts
-      final allAssignedSnapshot = await _firestore
-          .collection('sos_alerts')
-          .where('status', isEqualTo: 'assigned')
-          .get();
-          
-      print('Total assigned alerts in the system: ${allAssignedSnapshot.docs.length}');
-      
-      for (var doc in allAssignedSnapshot.docs) {
-        final data = doc.data();
-        print('Alert ID: ${doc.id}, assignedTo: ${data['assignedTo']}, status: ${data['status']}');
-      }
-    } catch (e) {
-      print('Error checking alerts: $e');
+      debugPrint('Error debugging responder identity: $e');
     }
   }
 
@@ -110,7 +81,7 @@ class SOSAlertService {
     try {
       return await _firestore.collection('users').doc(userId).get();
     } catch (e) {
-      print('Error fetching user details: $e');
+      debugPrint('Error fetching user details: $e');
       return null;
     }
   }
@@ -129,9 +100,10 @@ class SOSAlertService {
   }
 
   // Update responder location (could be used for tracking)
-  Future<void> updateResponderLocation(double latitude, double longitude) async {
+  Future<void> updateResponderLocation(
+      double latitude, double longitude) async {
     if (currentResponderId == null) return;
-    
+
     await _firestore.collection('responders').doc(currentResponderId).update({
       'lastLocation': {
         'latitude': latitude,
@@ -140,4 +112,4 @@ class SOSAlertService {
       }
     });
   }
-} 
+}

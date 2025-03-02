@@ -65,16 +65,13 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
 
       // If alert is still not available after fetching
       if (alert == null) {
-        print("Alert still not available after fetching");
+        debugPrint("Alert still not available after fetching");
         setState(() {
           _isLoadingLocation = false;
           _errorMessage = "Alert not found";
         });
         return;
       }
-
-      print(
-          "Loading alert details: ${alert.id}, has location: ${alert.location != null}, has patient details: ${alert.patientDetails != null}");
 
       setState(() {
         _alert = alert;
@@ -86,7 +83,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       // Once we have the alert data, get the current location
       _getCurrentLocation();
     } catch (e) {
-      print("Error loading alert details: $e");
+      debugPrint("Error loading alert details: $e");
       setState(() {
         _isLoadingLocation = false;
         _errorMessage = "Failed to load alert details: $e";
@@ -102,7 +99,6 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     if (alert.location != null) {
       alertLat = alert.location!['latitude']?.toDouble();
       alertLng = alert.location!['longitude']?.toDouble();
-      print("Found location in map: $alertLat, $alertLng");
     }
 
     // If not found in location map, try direct properties
@@ -111,7 +107,6 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       if (alert.latitude != null && alert.longitude != null) {
         alertLat = alert.latitude!.toDouble();
         alertLng = alert.longitude!.toDouble();
-        print("Using direct lat/lng properties: $alertLat, $alertLng");
       }
     }
 
@@ -119,7 +114,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     if (alertLat == null ||
         alertLng == null ||
         (alertLat == 0 && alertLng == 0)) {
-      print("Alert location coordinates are invalid or not found");
+      debugPrint("Alert location coordinates are invalid or not found");
       setState(() {
         _errorMessage = "No location data available for this alert";
       });
@@ -202,7 +197,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       ).catchError((e) {
-        print('Error getting location: $e');
+        debugPrint('Error getting location: $e');
         setState(() {
           _errorMessage = 'Could not get current location: $e';
           _isLoadingLocation = false;
@@ -219,7 +214,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         _isLoadingLocation = false;
       });
     } catch (e) {
-      print('Error getting location: $e');
+      debugPrint('Error getting location: $e');
       setState(() {
         _errorMessage = 'Error getting location: $e';
         _isLoadingLocation = false;
@@ -285,7 +280,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         }
       }
     } catch (e) {
-      print('Error launching navigation: $e');
+      debugPrint('Error launching navigation: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Could not launch navigation: $e'),
@@ -567,6 +562,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                                 Text(
                                   'Location Details',
                                   style: Theme.of(context).textTheme.titleLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const Divider(),
                                 _buildInfoRow('Distance', distanceText),
@@ -601,6 +598,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                                 Text(
                                   'Emergency Information',
                                   style: Theme.of(context).textTheme.titleLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const Divider(),
                                 _buildInfoRow(
@@ -643,6 +642,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                                     'Device Information',
                                     style:
                                         Theme.of(context).textTheme.titleLarge,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const Divider(),
                                   _buildInfoRow('Model',
@@ -723,6 +724,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -764,10 +767,6 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     // Determine phone
     final String phone = patientInfo['phone'] ?? alert.userPhone;
 
-    // Log what data we're displaying for debugging
-    print(
-        'Displaying user info - Name: $displayName, Email: $email, Phone: $phone, Has Patient Details: $hasPatientDetails');
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -783,11 +782,14 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                 Text(
                   'Patient Information',
                   style: Theme.of(context).textTheme.titleLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),
                 if (alert.userId.isNotEmpty)
                   Tooltip(
-                    message: 'Patient ID: ${alert.userId}',
+                    message:
+                        'Patient ID: ${alert.userId.length > 20 ? '${alert.userId.substring(0, 20)}...' : alert.userId}',
                     child: const Icon(Icons.info_outline, size: 16),
                   ),
               ],
@@ -868,6 +870,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -876,6 +880,8 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                 : Text(
                     value?.toString() ?? 'Not available',
                     style: Theme.of(context).textTheme.bodyMedium,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
           ),
         ],

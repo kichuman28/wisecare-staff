@@ -66,18 +66,14 @@ class SOSAlertModel {
       {Map<String, dynamic>? patientData}) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-    print('Creating SOSAlertModel from doc: ${doc.id}');
-
     // Handle possible field structure variations
     String assignedTo = 'unassigned';
     if (data['assignedTo'] != null) {
       assignedTo = data['assignedTo'];
     } else if (data.containsKey('responder')) {
       assignedTo = data['responder'] ?? 'unassigned';
-      print('Using responder field instead of assignedTo: $assignedTo');
     } else if (data.containsKey('assignedResponder')) {
       assignedTo = data['assignedResponder'] ?? 'unassigned';
-      print('Using assignedResponder field instead of assignedTo: $assignedTo');
     }
 
     // Extract location data
@@ -250,8 +246,6 @@ class SOSAlertProvider extends ChangeNotifier {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    print('Setting up real-time listener for alerts assigned to: ${user.uid}');
-
     // Set loading state
     _isLoading = true;
     notifyListeners();
@@ -263,8 +257,6 @@ class SOSAlertProvider extends ChangeNotifier {
         .snapshots()
         .listen((snapshot) async {
       try {
-        print('Received update with ${snapshot.docs.length} alerts');
-
         // Process each alert and fetch user details
         List<SOSAlertModel> newAlerts = [];
 
@@ -280,12 +272,9 @@ class SOSAlertProvider extends ChangeNotifier {
                   await _firestore.collection('users').doc(userId).get();
               if (userDoc.exists) {
                 patientData = userDoc.data();
-                print('Fetched patient details for userId: $userId');
-              } else {
-                print('No user found with ID: $userId');
               }
             } catch (e) {
-              print('Error fetching user details: $e');
+              debugPrint('Error fetching user details: $e');
             }
           }
 
@@ -300,12 +289,12 @@ class SOSAlertProvider extends ChangeNotifier {
         // Update location if needed
         updateCurrentLocation();
       } catch (e) {
-        print('Error processing alerts update: $e');
+        debugPrint('Error processing alerts update: $e');
         _isLoading = false;
         notifyListeners();
       }
     }, onError: (error) {
-      print('Error in alerts listener: $error');
+      debugPrint('Error in alerts listener: $error');
       _isLoading = false;
       notifyListeners();
     });
@@ -320,13 +309,12 @@ class SOSAlertProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error updating location: $e');
+      debugPrint('Error updating location: $e');
     }
   }
 
   // Manual refresh method (still useful for force refresh)
   Future<void> fetchAssignedAlerts() async {
-    print('Manual refresh of assigned alerts...');
     // Reset any errors and show loading
     _isLoading = true;
     notifyListeners();
@@ -345,9 +333,6 @@ class SOSAlertProvider extends ChangeNotifier {
           .where('status', isEqualTo: 'assigned')
           .get();
 
-      print(
-          'Total alerts with status "assigned" in the system: ${assignedAlertsSnapshot.docs.length}');
-
       // Check alerts assigned to current responder
       final user = _auth.currentUser;
       if (user != null) {
@@ -355,9 +340,6 @@ class SOSAlertProvider extends ChangeNotifier {
             .collection('sos_alerts')
             .where('assignedTo', isEqualTo: user.uid)
             .get();
-
-        print(
-            'Fetched ${allAssignedAlertsSnapshot.docs.length} total alerts assigned to responderId: ${user.uid}');
       }
 
       // End loading state if it wasn't already ended by the listener
@@ -366,7 +348,7 @@ class SOSAlertProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error in manual refresh: $e');
+      debugPrint('Error in manual refresh: $e');
       _isLoading = false;
       notifyListeners();
     }
@@ -382,7 +364,7 @@ class SOSAlertProvider extends ChangeNotifier {
 
       // No need to manually refresh as the listener will update
     } catch (e) {
-      print('Error resolving alert: $e');
+      debugPrint('Error resolving alert: $e');
     }
   }
 
@@ -393,8 +375,6 @@ class SOSAlertProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      print('Fetching detailed alert information for ID: $alertId');
-
       // Cancel any existing subscription
       _currentAlertSubscription?.cancel();
 
@@ -403,7 +383,7 @@ class SOSAlertProvider extends ChangeNotifier {
           await _firestore.collection('sos_alerts').doc(alertId).get();
 
       if (!docSnapshot.exists) {
-        print('Alert document not found in Firestore');
+        debugPrint('Alert document not found in Firestore');
         _isLoading = false;
         notifyListeners();
         return;
@@ -420,15 +400,10 @@ class SOSAlertProvider extends ChangeNotifier {
               await _firestore.collection('users').doc(userId).get();
           if (userDoc.exists) {
             patientData = userDoc.data();
-            print('Successfully fetched patient details for userId: $userId');
-          } else {
-            print('No user document found for ID: $userId');
           }
         } catch (e) {
-          print('Error fetching user details: $e');
+          debugPrint('Error fetching user details: $e');
         }
-      } else {
-        print('No userId found in alert document to fetch patient details');
       }
 
       // Create the alert model with patient data
@@ -456,11 +431,9 @@ class SOSAlertProvider extends ChangeNotifier {
                   await _firestore.collection('users').doc(updatedUserId).get();
               if (userDoc.exists) {
                 updatedPatientData = userDoc.data();
-                print(
-                    'Real-time update: Fetched patient details for userId: $updatedUserId');
               }
             } catch (e) {
-              print('Error fetching user details in real-time update: $e');
+              debugPrint('Error fetching user details in real-time update: $e');
             }
           }
 
@@ -468,15 +441,15 @@ class SOSAlertProvider extends ChangeNotifier {
               patientData: updatedPatientData);
           notifyListeners();
         } else {
-          print('Alert document no longer exists');
+          debugPrint('Alert document no longer exists');
           _currentAlert = null;
           notifyListeners();
         }
       }, onError: (error) {
-        print('Error in alert real-time listener: $error');
+        debugPrint('Error in alert real-time listener: $error');
       });
     } catch (e) {
-      print('Error fetching alert details: $e');
+      debugPrint('Error fetching alert details: $e');
       _isLoading = false;
       notifyListeners();
     }
