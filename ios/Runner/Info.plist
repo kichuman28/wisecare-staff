@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to provide emergency response services and navigation to alerts.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to your location in the background to track responders and provide efficient emergency services.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to provide emergency response services and navigation to alerts.</string>
 </dict>
 </plist>

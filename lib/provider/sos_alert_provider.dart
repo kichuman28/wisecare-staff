@@ -25,7 +25,7 @@ class SOSAlertModel {
   final String userPhone;
   final String address;
   final String userPhoto;
-  
+
   // Added missing properties that UI is trying to access
   final String priority;
   final Map<String, dynamic>? location;
@@ -33,7 +33,7 @@ class SOSAlertModel {
   final String? detectionMethod;
   final Map<String, dynamic>? deviceInfo;
   final List<Map<String, dynamic>>? notes;
-  
+
   // Detailed user information from users collection
   final Map<String, dynamic>? patientDetails;
 
@@ -62,11 +62,12 @@ class SOSAlertModel {
     this.patientDetails,
   });
 
-  factory SOSAlertModel.fromFirestore(DocumentSnapshot doc, {Map<String, dynamic>? patientData}) {
+  factory SOSAlertModel.fromFirestore(DocumentSnapshot doc,
+      {Map<String, dynamic>? patientData}) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    
+
     print('Creating SOSAlertModel from doc: ${doc.id}');
-    
+
     // Handle possible field structure variations
     String assignedTo = 'unassigned';
     if (data['assignedTo'] != null) {
@@ -78,12 +79,12 @@ class SOSAlertModel {
       assignedTo = data['assignedResponder'] ?? 'unassigned';
       print('Using assignedResponder field instead of assignedTo: $assignedTo');
     }
-    
+
     // Extract location data
     double? latitude;
     double? longitude;
     Map<String, dynamic>? locationData;
-    
+
     if (data.containsKey('location') && data['location'] is Map) {
       locationData = Map<String, dynamic>.from(data['location'] as Map);
       latitude = locationData['latitude']?.toDouble();
@@ -96,10 +97,10 @@ class SOSAlertModel {
         'longitude': longitude,
       };
     }
-    
+
     // Extract user ID for fetching patient details
     final String userId = data['userId'] ?? data['user_id'] ?? '';
-    
+
     // Handle user data
     Map<String, dynamic>? userData;
     if (data.containsKey('user') && data['user'] is Map) {
@@ -109,44 +110,46 @@ class SOSAlertModel {
       userData = {
         'id': userId,
         'deviceId': data['deviceId'] ?? 'unknown',
-        'name': patientData?['displayName'] ?? data['userName'] ?? 'Unknown User',
+        'name':
+            patientData?['displayName'] ?? data['userName'] ?? 'Unknown User',
         'phone': patientData?['phone'] ?? data['userPhone'] ?? 'No Phone',
         'email': patientData?['email'] ?? data['userEmail'] ?? 'No Email',
         'photoURL': patientData?['photoURL'] ?? data['userPhoto'] ?? '',
-        'displayName': patientData?['displayName'] ?? data['userName'] ?? 'Unknown User',
+        'displayName':
+            patientData?['displayName'] ?? data['userName'] ?? 'Unknown User',
       };
     }
-    
+
     // Merge patient data if available
     if (patientData != null) {
-      userData['displayName'] = patientData['displayName'] ?? userData['displayName'];
+      userData['displayName'] =
+          patientData['displayName'] ?? userData['displayName'];
       userData['email'] = patientData['email'] ?? userData['email'];
       userData['phone'] = patientData['phone'] ?? userData['phone'];
       userData['photoURL'] = patientData['photoURL'] ?? userData['photoURL'];
     }
-    
+
     // Handle status field variations
     String status = data['status'] ?? 'pending';
-    
+
     // Extract priority
     String priority = data['priority'] ?? 'medium';
-    
+
     // Extract device info
     Map<String, dynamic>? deviceInfo;
     if (data.containsKey('deviceInfo') && data['deviceInfo'] is Map) {
       deviceInfo = Map<String, dynamic>.from(data['deviceInfo'] as Map);
     }
-    
+
     // Extract notes
     List<Map<String, dynamic>>? notes;
     if (data.containsKey('notes') && data['notes'] is List) {
-      notes = List<Map<String, dynamic>>.from(
-        (data['notes'] as List).map((note) => 
-          note is Map<String, dynamic> ? note : <String, dynamic>{'text': note.toString()}
-        )
-      );
+      notes = List<Map<String, dynamic>>.from((data['notes'] as List).map(
+          (note) => note is Map<String, dynamic>
+              ? note
+              : <String, dynamic>{'text': note.toString()}));
     }
-    
+
     return SOSAlertModel(
       id: doc.id,
       userId: userId,
@@ -154,14 +157,14 @@ class SOSAlertModel {
       alertType: data['alertType'] ?? data['type'] ?? 'emergency',
       status: status,
       assignedTo: assignedTo,
-      assignedAt: data['assignedAt'] != null 
-          ? (data['assignedAt'] as Timestamp).toDate() 
+      assignedAt: data['assignedAt'] != null
+          ? (data['assignedAt'] as Timestamp).toDate()
           : null,
-      resolvedAt: data['resolvedAt'] != null 
-          ? (data['resolvedAt'] as Timestamp).toDate() 
+      resolvedAt: data['resolvedAt'] != null
+          ? (data['resolvedAt'] as Timestamp).toDate()
           : null,
-      createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as Timestamp).toDate() 
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       latitude: latitude,
       longitude: longitude,
@@ -186,15 +189,15 @@ class SOSAlertProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService _authService = AuthService();
   final SOSAlertService _sosAlertService = SOSAlertService();
-  
+
   List<SOSAlertModel> _assignedAlerts = [];
   SOSAlertModel? _currentAlert;
   bool _isLoading = false;
-  
+
   // Listeners
   StreamSubscription<QuerySnapshot>? _alertsSubscription;
   StreamSubscription<DocumentSnapshot>? _currentAlertSubscription;
-  
+
   // Location variables
   LatLng? _currentUserLocation;
   LatLng? get currentUserLocation => _currentUserLocation;
@@ -210,7 +213,7 @@ class SOSAlertProvider extends ChangeNotifier {
     // Start listening to assigned alerts when provider is created
     startListeningToAlerts();
   }
-  
+
   @override
   void dispose() {
     // Clean up listeners
@@ -243,68 +246,69 @@ class SOSAlertProvider extends ChangeNotifier {
   void _setupAlertsListener() {
     // Cancel any existing subscription
     _alertsSubscription?.cancel();
-    
+
     final user = _auth.currentUser;
     if (user == null) return;
-    
+
     print('Setting up real-time listener for alerts assigned to: ${user.uid}');
-    
+
     // Set loading state
     _isLoading = true;
     notifyListeners();
-    
+
     // Listen to assigned alerts
     _alertsSubscription = _firestore
         .collection('sos_alerts')
         .where('assignedTo', isEqualTo: user.uid)
         .snapshots()
         .listen((snapshot) async {
-          try {
-            print('Received update with ${snapshot.docs.length} alerts');
-            
-            // Process each alert and fetch user details
-            List<SOSAlertModel> newAlerts = [];
-            
-            for (var doc in snapshot.docs) {
-              final data = doc.data();
-              final userId = data['userId'] ?? data['user_id'] ?? '';
-              
-              // Only fetch user details if userId is available
-              Map<String, dynamic>? patientData;
-              if (userId.isNotEmpty) {
-                try {
-                  final userDoc = await _firestore.collection('users').doc(userId).get();
-                  if (userDoc.exists) {
-                    patientData = userDoc.data();
-                    print('Fetched patient details for userId: $userId');
-                  } else {
-                    print('No user found with ID: $userId');
-                  }
-                } catch (e) {
-                  print('Error fetching user details: $e');
-                }
+      try {
+        print('Received update with ${snapshot.docs.length} alerts');
+
+        // Process each alert and fetch user details
+        List<SOSAlertModel> newAlerts = [];
+
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          final userId = data['userId'] ?? data['user_id'] ?? '';
+
+          // Only fetch user details if userId is available
+          Map<String, dynamic>? patientData;
+          if (userId.isNotEmpty) {
+            try {
+              final userDoc =
+                  await _firestore.collection('users').doc(userId).get();
+              if (userDoc.exists) {
+                patientData = userDoc.data();
+                print('Fetched patient details for userId: $userId');
+              } else {
+                print('No user found with ID: $userId');
               }
-              
-              newAlerts.add(SOSAlertModel.fromFirestore(doc, patientData: patientData));
+            } catch (e) {
+              print('Error fetching user details: $e');
             }
-            
-            _assignedAlerts = newAlerts;
-            _isLoading = false;
-            notifyListeners();
-            
-            // Update location if needed
-            updateCurrentLocation();
-            
-          } catch (e) {
-            print('Error processing alerts update: $e');
-            _isLoading = false;
-            notifyListeners();
           }
-        }, onError: (error) {
-          print('Error in alerts listener: $error');
-          _isLoading = false;
-          notifyListeners();
-        });
+
+          newAlerts
+              .add(SOSAlertModel.fromFirestore(doc, patientData: patientData));
+        }
+
+        _assignedAlerts = newAlerts;
+        _isLoading = false;
+        notifyListeners();
+
+        // Update location if needed
+        updateCurrentLocation();
+      } catch (e) {
+        print('Error processing alerts update: $e');
+        _isLoading = false;
+        notifyListeners();
+      }
+    }, onError: (error) {
+      print('Error in alerts listener: $error');
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   // Update the user's current location
@@ -318,31 +322,32 @@ class SOSAlertProvider extends ChangeNotifier {
     } catch (e) {
       print('Error updating location: $e');
     }
-      }
-      
+  }
+
   // Manual refresh method (still useful for force refresh)
   Future<void> fetchAssignedAlerts() async {
     print('Manual refresh of assigned alerts...');
     // Reset any errors and show loading
-      _isLoading = true;
-      notifyListeners();
+    _isLoading = true;
+    notifyListeners();
 
     // Just wait for the listener to update with fresh data
     // and force a location update
     await updateCurrentLocation();
-      
-      // Debug: Check responder identity
-      await _sosAlertService.debugResponderIdentity();
-      
+
+    // Debug: Check responder identity
+    await _sosAlertService.debugResponderIdentity();
+
     // Check total alerts with assigned status
     try {
       final assignedAlertsSnapshot = await _firestore
           .collection('sos_alerts')
           .where('status', isEqualTo: 'assigned')
           .get();
-          
-      print('Total alerts with status "assigned" in the system: ${assignedAlertsSnapshot.docs.length}');
-      
+
+      print(
+          'Total alerts with status "assigned" in the system: ${assignedAlertsSnapshot.docs.length}');
+
       // Check alerts assigned to current responder
       final user = _auth.currentUser;
       if (user != null) {
@@ -350,14 +355,15 @@ class SOSAlertProvider extends ChangeNotifier {
             .collection('sos_alerts')
             .where('assignedTo', isEqualTo: user.uid)
             .get();
-            
-        print('Fetched ${allAssignedAlertsSnapshot.docs.length} total alerts assigned to responderId: ${user.uid}');
+
+        print(
+            'Fetched ${allAssignedAlertsSnapshot.docs.length} total alerts assigned to responderId: ${user.uid}');
       }
-      
+
       // End loading state if it wasn't already ended by the listener
       if (_isLoading) {
-      _isLoading = false;
-      notifyListeners();
+        _isLoading = false;
+        notifyListeners();
       }
     } catch (e) {
       print('Error in manual refresh: $e');
@@ -373,7 +379,7 @@ class SOSAlertProvider extends ChangeNotifier {
         'status': 'resolved',
         'resolvedAt': FieldValue.serverTimestamp(),
       });
-      
+
       // No need to manually refresh as the listener will update
     } catch (e) {
       print('Error resolving alert: $e');
@@ -383,56 +389,114 @@ class SOSAlertProvider extends ChangeNotifier {
   // Get more details about a specific alert
   Future<void> fetchAlertDetails(String alertId) async {
     try {
+      // Set loading state to true
+      _isLoading = true;
+      notifyListeners();
+
+      print('Fetching detailed alert information for ID: $alertId');
+
       // Cancel any existing subscription
       _currentAlertSubscription?.cancel();
-      
-      // Setup real-time listener for this specific alert
+
+      // Get a one-time snapshot first for immediate data
+      final docSnapshot =
+          await _firestore.collection('sos_alerts').doc(alertId).get();
+
+      if (!docSnapshot.exists) {
+        print('Alert document not found in Firestore');
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      final userId = data['userId'] ?? data['user_id'] ?? '';
+
+      // Fetch user details immediately
+      Map<String, dynamic>? patientData;
+      if (userId.isNotEmpty) {
+        try {
+          final userDoc =
+              await _firestore.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            patientData = userDoc.data();
+            print('Successfully fetched patient details for userId: $userId');
+          } else {
+            print('No user document found for ID: $userId');
+          }
+        } catch (e) {
+          print('Error fetching user details: $e');
+        }
+      } else {
+        print('No userId found in alert document to fetch patient details');
+      }
+
+      // Create the alert model with patient data
+      _currentAlert =
+          SOSAlertModel.fromFirestore(docSnapshot, patientData: patientData);
+      _isLoading = false;
+      notifyListeners();
+
+      // Setup real-time listener for future updates to this alert
       _currentAlertSubscription = _firestore
           .collection('sos_alerts')
           .doc(alertId)
           .snapshots()
-          .listen((docSnapshot) async {
-            if (docSnapshot.exists) {
-              final data = docSnapshot.data() as Map<String, dynamic>;
-              final userId = data['userId'] ?? data['user_id'] ?? '';
-              
-              // Fetch user details
-              Map<String, dynamic>? patientData;
-              if (userId.isNotEmpty) {
-                try {
-                  final userDoc = await _firestore.collection('users').doc(userId).get();
-                  if (userDoc.exists) {
-                    patientData = userDoc.data();
-                    print('Fetched patient details for alert details: $userId');
-                  }
-                } catch (e) {
-                  print('Error fetching user details for alert: $e');
-                }
+          .listen((updatedSnapshot) async {
+        if (updatedSnapshot.exists) {
+          final updatedData = updatedSnapshot.data() as Map<String, dynamic>;
+          final updatedUserId =
+              updatedData['userId'] ?? updatedData['user_id'] ?? '';
+
+          // Fetch user details again for real-time updates
+          Map<String, dynamic>? updatedPatientData;
+          if (updatedUserId.isNotEmpty) {
+            try {
+              final userDoc =
+                  await _firestore.collection('users').doc(updatedUserId).get();
+              if (userDoc.exists) {
+                updatedPatientData = userDoc.data();
+                print(
+                    'Real-time update: Fetched patient details for userId: $updatedUserId');
               }
-              
-              _currentAlert = SOSAlertModel.fromFirestore(docSnapshot, patientData: patientData);
-        notifyListeners();
-      }
-          });
+            } catch (e) {
+              print('Error fetching user details in real-time update: $e');
+            }
+          }
+
+          _currentAlert = SOSAlertModel.fromFirestore(updatedSnapshot,
+              patientData: updatedPatientData);
+          notifyListeners();
+        } else {
+          print('Alert document no longer exists');
+          _currentAlert = null;
+          notifyListeners();
+        }
+      }, onError: (error) {
+        print('Error in alert real-time listener: $error');
+      });
     } catch (e) {
       print('Error fetching alert details: $e');
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   // Calculate distance between responder and alert location
-  double calculateDistance(LatLng responderLocation, Map<String, dynamic>? alertLocation) {
+  double calculateDistance(
+      LatLng responderLocation, Map<String, dynamic>? alertLocation) {
     if (alertLocation == null) return 0.0;
-    
+
     double alertLat = alertLocation['latitude'] ?? 0.0;
     double alertLng = alertLocation['longitude'] ?? 0.0;
-    
+
     if (alertLat == 0 || alertLng == 0) return 0.0;
-    
+
     final distance = maps_toolkit.SphericalUtil.computeDistanceBetween(
-      maps_toolkit.LatLng(responderLocation.latitude, responderLocation.longitude),
-      maps_toolkit.LatLng(alertLat, alertLng)
-    );
-    
+        maps_toolkit.LatLng(
+            responderLocation.latitude, responderLocation.longitude),
+        maps_toolkit.LatLng(alertLat, alertLng));
+
     return distance.toDouble(); // Convert num to double
   }
 
@@ -456,10 +520,10 @@ class SOSAlertProvider extends ChangeNotifier {
     // Assuming average speed of 30 km/h in urban areas
     // 30 km/h = 8.33 m/s
     final speedInMetersPerSecond = 8.33;
-    
+
     final seconds = distanceInMeters / speedInMetersPerSecond;
     final minutes = seconds / 60;
-    
+
     if (minutes < 1) {
       return 'Less than 1 min';
     } else if (minutes < 60) {
@@ -469,4 +533,10 @@ class SOSAlertProvider extends ChangeNotifier {
       return '${hours.toStringAsFixed(1)} hours';
     }
   }
-} 
+
+  // Set the current alert directly
+  void setCurrentAlert(SOSAlertModel alert) {
+    _currentAlert = alert;
+    notifyListeners();
+  }
+}

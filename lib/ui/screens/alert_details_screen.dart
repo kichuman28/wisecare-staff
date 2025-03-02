@@ -33,16 +33,16 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
   Future<void> _loadAlertDetails() async {
     try {
       setState(() => _isLoading = true);
-      
+
       // Debug information
       print('Loading alert details for ID: ${widget.alertId}');
-      
+
       // Get the alert details from Firestore directly for debugging
       final doc = await FirebaseFirestore.instance
           .collection('sos_alerts')
           .doc(widget.alertId)
           .get();
-          
+
       if (!doc.exists) {
         print('Alert document not found in Firestore');
         setState(() {
@@ -51,9 +51,9 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         });
         return;
       }
-      
+
       print('Alert document data: ${doc.data()}');
-      
+
       // Create the alert model
       final alert = SOSAlertModel.fromFirestore(doc);
       setState(() {
@@ -71,15 +71,15 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
 
   Future<void> _resolveAlert() async {
     final sosProvider = Provider.of<SOSAlertProvider>(context, listen: false);
-    
+
     try {
       setState(() => _isResolvingAlert = true);
-      
+
       // Debug information
       print('Resolving alert ID: ${widget.alertId}');
-      
+
       await sosProvider.resolveAlert(widget.alertId);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -87,7 +87,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Navigate back after resolving
         Navigator.of(context).pop();
       }
@@ -118,7 +118,11 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
   }
 
   Future<void> _launchNavigation() async {
-    if (_alert == null || _alert!.latitude == null || _alert!.longitude == null) {
+    if (_alert == null ||
+        (_alert!.latitude == null && _alert!.longitude == null)) {
+      print(
+          "Navigation error: No coordinates available - latitude: ${_alert?.latitude}, longitude: ${_alert?.longitude}");
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Location coordinates not available'),
@@ -127,18 +131,35 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       );
       return;
     }
-    
-    final url = LocationService.getNavigationUrl(
+
+    print(
+        "Attempting navigation with coordinates: lat=${_alert!.latitude}, lng=${_alert!.longitude}");
+
+    final appUrl = LocationService.getNavigationUrl(
       _alert!.latitude!,
       _alert!.longitude!,
     );
-    
-    print('Navigation URL: $url');
-    
+
+    // Fallback URL for web if app URL fails
+    final webUrl = LocationService.getWebNavigationUrl(
+      _alert!.latitude!,
+      _alert!.longitude!,
+    );
+
+    print('Navigation URLs - App: $appUrl, Web: $webUrl');
+
     try {
-      if (await canLaunchUrlString(url)) {
-        await launchUrlString(url);
+      // First try to launch the Google Maps app
+      if (await canLaunchUrlString(appUrl as String)) {
+        print("Launching Google Maps app URL");
+        await launchUrlString(appUrl as String);
+      }
+      // If that fails, try the web URL
+      else if (await canLaunchUrlString(webUrl)) {
+        print("Falling back to web URL");
+        await launchUrlString(webUrl);
       } else {
+        print("Could not launch either URL");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Could not launch navigation'),
@@ -158,7 +179,9 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
   }
 
   Future<void> _callUser() async {
-    if (_alert == null || _alert!.userPhone.isEmpty || _alert!.userPhone == 'No Phone') {
+    if (_alert == null ||
+        _alert!.userPhone.isEmpty ||
+        _alert!.userPhone == 'No Phone') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Phone number not available'),
@@ -167,12 +190,12 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       );
       return;
     }
-    
+
     final phoneNumber = _alert!.userPhone.replaceAll(RegExp(r'[^0-9+]'), '');
     final url = 'tel:$phoneNumber';
-    
+
     print('Phone URL: $url');
-    
+
     try {
       if (await canLaunchUrlString(url)) {
         await launchUrlString(url);
@@ -216,7 +239,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
     }
-    
+
     if (_errorMessage != null) {
       return Center(
         child: Column(
@@ -238,13 +261,13 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         ),
       );
     }
-    
+
     if (_alert == null) {
       return Center(
         child: Text('Alert not found'),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: _refreshAlertDetails,
       child: SingleChildScrollView(
@@ -273,7 +296,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     String alertType = _alert!.alertType.toUpperCase();
     IconData typeIcon = Icons.warning_amber;
     Color typeColor = Colors.orange;
-    
+
     if (alertType.contains('FALL')) {
       typeIcon = Icons.personal_injury;
       typeColor = Colors.red;
@@ -284,12 +307,12 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       typeIcon = Icons.medical_services;
       typeColor = Colors.red;
     }
-    
+
     String timeAgo = '';
     if (_alert!.createdAt != null) {
       final now = DateTime.now();
       final difference = now.difference(_alert!.createdAt!);
-      
+
       if (difference.inMinutes < 60) {
         timeAgo = '${difference.inMinutes} minutes ago';
       } else if (difference.inHours < 24) {
@@ -298,7 +321,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
         timeAgo = '${difference.inDays} days ago';
       }
     }
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -410,8 +433,22 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
   }
 
   Widget _buildLocationCard() {
-    final locationAvailable = _alert!.latitude != null && _alert!.longitude != null;
-    
+    print(
+        "Building location card with data: latitude=${_alert!.latitude}, longitude=${_alert!.longitude}, address='${_alert!.address}'");
+
+    // Check if either latitude or longitude are available (not both need to be null)
+    final locationAvailable =
+        _alert!.latitude != null || _alert!.longitude != null;
+
+    // Log coordinates for debugging
+    if (_alert!.latitude != null && _alert!.longitude != null) {
+      print(
+          "Valid coordinates found: ${_alert!.latitude!}, ${_alert!.longitude!}");
+    } else {
+      print(
+          "Missing coordinates: latitude=${_alert!.latitude}, longitude=${_alert!.longitude}");
+    }
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -448,11 +485,17 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                 _alert!.address,
               ),
             if (locationAvailable) Divider(),
-            if (locationAvailable)
+            if (_alert!.latitude != null)
               _buildUserDetailRow(
                 Icons.map,
-                'Coordinates',
-                'Lat: ${_alert!.latitude!.toStringAsFixed(6)}, Lng: ${_alert!.longitude!.toStringAsFixed(6)}',
+                'Latitude',
+                '${_alert!.latitude!.toStringAsFixed(6)}',
+              ),
+            if (_alert!.longitude != null)
+              _buildUserDetailRow(
+                Icons.map,
+                'Longitude',
+                '${_alert!.longitude!.toStringAsFixed(6)}',
               ),
             if (!locationAvailable)
               Center(
@@ -474,11 +517,11 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
     final createdDate = _alert!.createdAt != null
         ? DateFormat('MMM dd, yyyy hh:mm a').format(_alert!.createdAt!)
         : 'Unknown';
-    
+
     final assignedDate = _alert!.assignedAt != null
         ? DateFormat('MMM dd, yyyy hh:mm a').format(_alert!.assignedAt!)
         : 'Not assigned';
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -699,11 +742,13 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                         width: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : Icon(Icons.check_circle),
-                label: Text(_isResolvingAlert ? 'Resolving...' : 'Resolve Alert'),
+                label:
+                    Text(_isResolvingAlert ? 'Resolving...' : 'Resolve Alert'),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.orange,
@@ -716,4 +761,4 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       ),
     );
   }
-} 
+}
