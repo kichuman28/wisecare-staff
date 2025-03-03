@@ -1,9 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:wisecare_staff/core/models/order_model.dart';
 import 'package:wisecare_staff/core/theme/app_theme.dart';
+import 'package:wisecare_staff/provider/order_provider.dart';
+import 'package:wisecare_staff/ui/screens/roles/delivery/order_detail_screen.dart';
 import 'package:wisecare_staff/ui/widgets/custom_card.dart';
 
-class DeliveryDashboardScreen extends StatelessWidget {
+class DeliveryDashboardScreen extends StatefulWidget {
   const DeliveryDashboardScreen({super.key});
+
+  @override
+  State<DeliveryDashboardScreen> createState() =>
+      _DeliveryDashboardScreenState();
+}
+
+class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+
+    // Initialize order provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrderProvider>().init();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,129 +50,504 @@ class DeliveryDashboardScreen extends StatelessWidget {
           style: theme.textTheme.titleLarge,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Delivery Stats Section
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    title: 'Pending',
-                    value: '5',
-                    icon: Icons.pending_outlined,
-                    color: Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    title: 'Completed',
-                    value: '12',
-                    icon: Icons.check_circle_outline,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+      body: Consumer<OrderProvider>(
+        builder: (context, orderProvider, _) {
+          if (orderProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            // Active Deliveries Section
-            Text(
-              'Active Deliveries',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 16),
-            CustomCard(
+          if (orderProvider.errorMessage != null) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildDeliveryItem(
-                    context,
-                    orderNumber: '#1234',
-                    customerName: 'John Doe',
-                    address: '789 Oak St, Apt 4B',
-                    items: 'Medicine Package',
-                    status: 'In Transit',
-                    isUrgent: true,
+                  Text(
+                    'Error: ${orderProvider.errorMessage}',
+                    style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
                   ),
-                  const Divider(),
-                  _buildDeliveryItem(
-                    context,
-                    orderNumber: '#1235',
-                    customerName: 'Jane Smith',
-                    address: '456 Pine St, Room 302',
-                    items: 'Medical Equipment',
-                    status: 'Pending',
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      orderProvider.clearError();
+                      orderProvider.init();
+                    },
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
+            );
+          }
 
-            // Quick Actions Section
-            Text(
-              'Quick Actions',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 16),
-            Row(
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _buildActionButton(
-                    context,
-                    icon: Icons.list_alt_outlined,
-                    label: 'All Orders',
-                    onTap: () {
-                      // Navigate to all orders screen
-                    },
-                  ),
+                // Order Summary Section
+                _buildOrderSummary(orderProvider),
+                const SizedBox(height: 24),
+
+                // Today's Deliveries Section
+                Text(
+                  'Today\'s Deliveries',
+                  style: theme.textTheme.titleMedium,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionButton(
-                    context,
-                    icon: Icons.route_outlined,
-                    label: 'Route Map',
-                    onTap: () {
-                      // Navigate to route map screen
-                    },
-                  ),
+                const SizedBox(height: 16),
+                _buildTodayDeliveries(orderProvider),
+                const SizedBox(height: 24),
+
+                // Order Management Tabs
+                _buildOrderTabs(orderProvider),
+                const SizedBox(height: 24),
+
+                // Performance Section
+                if (orderProvider.performanceMetrics != null)
+                  _buildPerformanceSection(orderProvider),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOrderSummary(OrderProvider orderProvider) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            context,
+            title: 'Pending',
+            value: orderProvider.processingCount.toString(),
+            icon: Icons.pending_outlined,
+            color: Colors.orange,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            context,
+            title: 'Out for Delivery',
+            value: orderProvider.dispatchedCount.toString(),
+            icon: Icons.local_shipping_outlined,
+            color: Colors.blue,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTodayDeliveries(OrderProvider orderProvider) {
+    final todayOrders = orderProvider.todayOrders;
+
+    if (todayOrders.isEmpty) {
+      return CustomCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.event_busy,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No deliveries scheduled for today',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    context,
-                    icon: Icons.history_outlined,
-                    label: 'History',
-                    onTap: () {
-                      // Navigate to delivery history screen
-                    },
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: todayOrders.length,
+        itemBuilder: (context, index) {
+          final order = todayOrders[index];
+          return Container(
+            width: 280,
+            margin: EdgeInsets.only(
+              right: index < todayOrders.length - 1 ? 16 : 0,
+            ),
+            child: CustomCard(
+              child: InkWell(
+                onTap: () => _navigateToOrderDetails(order),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '#${order.id.substring(0, 8)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: AppColors.text,
+                                ),
+                          ),
+                          const Spacer(),
+                          _buildStatusBadge(context, order.status),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        order.patientName,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppColors.text,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.deliveryAddress,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiary.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.medication_outlined,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${order.medicines.length} medications',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const Spacer(),
+                          Text(
+                            '₹${order.totalAmount.toStringAsFixed(2)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionButton(
-                    context,
-                    icon: Icons.support_agent_outlined,
-                    label: 'Support',
-                    onTap: () {
-                      // Navigate to support screen
-                    },
-                  ),
-                ),
-              ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOrderTabs(OrderProvider orderProvider) {
+    return Column(
+      children: [
+        TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primary,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.pending_actions),
+              text: 'Assigned',
+            ),
+            Tab(
+              icon: Icon(Icons.local_shipping),
+              text: 'In Progress',
+            ),
+            Tab(
+              icon: Icon(Icons.task_alt),
+              text: 'Completed',
+            ),
+            Tab(
+              icon: Icon(Icons.list_alt),
+              text: 'All',
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 400,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Assigned Tab
+              _buildOrdersList(orderProvider.processingOrders),
+
+              // In Progress Tab
+              _buildOrdersList(orderProvider.dispatchedOrders),
+
+              // Completed Tab
+              _buildOrdersList(orderProvider.deliveredOrders),
+
+              // All Tab
+              _buildOrdersList(orderProvider.allOrders),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrdersList(List<Order> orders) {
+    if (orders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No orders found',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < orders.length - 1 ? 16 : 0),
+          child: CustomCard(
+            child: InkWell(
+              onTap: () => _navigateToOrderDetails(order),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '#${order.id.substring(0, 8)}',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.text,
+                                  ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat.yMMMd().format(order.orderDate),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const Spacer(),
+                        _buildStatusBadge(context, order.status),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundImage: order.patientPhotoUrl != null
+                              ? NetworkImage(order.patientPhotoUrl!)
+                              : null,
+                          child: order.patientPhotoUrl == null
+                              ? Text(
+                                  order.patientName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                order.patientName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.text,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              Text(
+                                order.deliveryAddress,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.tertiary.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.medication_outlined,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${order.medicines.length} medications',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const Spacer(),
+                        Text(
+                          '₹${order.totalAmount.toStringAsFixed(2)}',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildOrderActionButton(order),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOrderActionButton(Order order) {
+    switch (order.status) {
+      case 'processing':
+        return ElevatedButton.icon(
+          icon: const Icon(Icons.local_shipping, size: 16),
+          label: const Text('START DELIVERY'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: () => _navigateToOrderDetails(order),
+        );
+      case 'dispatched':
+        return ElevatedButton.icon(
+          icon: const Icon(Icons.check_circle, size: 16),
+          label: const Text('MARK AS DELIVERED'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: () => _navigateToOrderDetails(order),
+        );
+      default:
+        return OutlinedButton.icon(
+          icon: const Icon(Icons.info_outline, size: 16),
+          label: const Text('VIEW DETAILS'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            minimumSize: const Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: () => _navigateToOrderDetails(order),
+        );
+    }
+  }
+
+  Widget _buildPerformanceSection(OrderProvider orderProvider) {
+    final metrics = orderProvider.performanceMetrics!;
+    final deliveryRate = (metrics['deliveryRate'] as double) * 100;
+    final avgDeliveryTime = metrics['avgDeliveryTime'] as double;
+    final totalDelivered = metrics['totalDelivered'] as int;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Performance',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildPerformanceCard(
+                context,
+                title: 'Delivery Rate',
+                value: '${deliveryRate.toStringAsFixed(1)}%',
+                icon: Icons.speed,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildPerformanceCard(
+                context,
+                title: 'Avg. Delivery Time',
+                value: _formatDeliveryTime(avgDeliveryTime),
+                icon: Icons.timer,
+                color: Colors.purple,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildPerformanceCard(
+          context,
+          title: 'Total Deliveries (30 days)',
+          value: totalDelivered.toString(),
+          icon: Icons.local_shipping,
+          color: Colors.green,
+        ),
+      ],
     );
   }
 
@@ -193,150 +599,113 @@ class DeliveryDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDeliveryItem(
+  Widget _buildPerformanceCard(
     BuildContext context, {
-    required String orderNumber,
-    required String customerName,
-    required String address,
-    required String items,
-    required String status,
-    bool isUrgent = false,
-  }) {
-    final theme = Theme.of(context);
-    final statusColor = status.toLowerCase() == 'in transit'
-        ? Colors.blue
-        : status.toLowerCase() == 'pending'
-            ? Colors.orange
-            : Colors.green;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                orderNumber,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.text,
-                ),
-              ),
-              const Spacer(),
-              if (isUrgent)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.priority_high,
-                        color: Colors.red,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Urgent',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            customerName,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: AppColors.text,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            address,
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () {
-                  // Navigate to delivery details
-                },
-                child: Text(
-                  'View Details',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    BuildContext context, {
+    required String title,
+    required String value,
     required IconData icon,
-    required String label,
-    required VoidCallback onTap,
+    required Color color,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: CustomCard(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: AppColors.primary,
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
         ),
       ),
     );
   }
-} 
+
+  Widget _buildStatusBadge(BuildContext context, String status) {
+    Color color;
+    String label;
+
+    switch (status) {
+      case 'processing':
+        color = Colors.orange;
+        label = 'Pending';
+        break;
+      case 'dispatched':
+        color = Colors.blue;
+        label = 'In Transit';
+        break;
+      case 'delivered':
+        color = Colors.green;
+        label = 'Delivered';
+        break;
+      case 'cancelled':
+        color = Colors.red;
+        label = 'Cancelled';
+        break;
+      default:
+        color = Colors.grey;
+        label = status;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+
+  String _formatDeliveryTime(double minutes) {
+    if (minutes < 60) {
+      return '${minutes.round()} mins';
+    } else {
+      final hours = (minutes / 60).floor();
+      final remainingMinutes = (minutes % 60).round();
+      return '$hours h ${remainingMinutes > 0 ? '$remainingMinutes m' : ''}';
+    }
+  }
+
+  void _navigateToOrderDetails(Order order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderDetailScreen(order: order),
+      ),
+    );
+  }
+}

@@ -7,17 +7,19 @@ import 'package:wisecare_staff/ui/screens/main_screen.dart';
 import 'package:wisecare_staff/provider/auth_provider.dart';
 import 'package:wisecare_staff/provider/task_provider.dart';
 import 'package:wisecare_staff/provider/sos_alert_provider.dart';
+import 'package:wisecare_staff/provider/order_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => SOSAlertProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: const WiseCareStaffApp(),
     ),
@@ -72,12 +74,12 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
             ),
           );
         }
-        
+
         // If authenticated, go to main screen
         if (snapshot.data == true) {
           return const MainScreen();
         }
-        
+
         // Otherwise, show login screen
         return const LoginScreen();
       },
