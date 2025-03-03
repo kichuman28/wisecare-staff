@@ -200,39 +200,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               widget.order.deliveryAddress,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 16),
-            if (widget.order.deliveryLocation != null)
-              SizedBox(
-                height: 150,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(
-                        widget.order.deliveryLocation!.latitude,
-                        widget.order.deliveryLocation!.longitude,
-                      ),
-                      zoom: 15,
+            if (widget.order.deliveryLocation != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Location: ${widget.order.deliveryLocation!.latitude.toStringAsFixed(6)}, ${widget.order.deliveryLocation!.longitude.toStringAsFixed(6)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
                     ),
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId('delivery_location'),
-                        position: LatLng(
-                          widget.order.deliveryLocation!.latitude,
-                          widget.order.deliveryLocation!.longitude,
-                        ),
-                        infoWindow: InfoWindow(
-                          title: widget.order.patientName,
-                          snippet: widget.order.deliveryAddress,
-                        ),
-                      ),
-                    },
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                    myLocationButtonEnabled: false,
                   ),
-                ),
+                ],
               ),
+            ],
           ],
         ),
       ),
@@ -485,6 +469,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _startDelivery() async {
+    // First, check if we have delivery location
+    if (widget.order.deliveryLocation != null) {
+      // Open Google Maps for navigation
+      _openNavigation();
+    } else {
+      // Show a message if no location is available
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No delivery location available for navigation'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+
+    // Then update the order status
     setState(() => _isUpdating = true);
 
     try {
@@ -832,14 +833,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     final lat = widget.order.deliveryLocation!.latitude;
     final lng = widget.order.deliveryLocation!.longitude;
-    final label = Uri.encodeComponent(widget.order.deliveryAddress);
 
+    // Create a Google Maps URL for navigation
     final url = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&destination_place_id=$label',
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving',
     );
 
     if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

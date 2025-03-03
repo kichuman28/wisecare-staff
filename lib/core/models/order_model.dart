@@ -19,6 +19,7 @@ class Order {
   final String? patientEmail;
   final String? patientPhone;
   final String? patientPhotoUrl;
+  final String? addressId;
 
   Order({
     required this.id,
@@ -39,6 +40,7 @@ class Order {
     this.patientEmail,
     this.patientPhone,
     this.patientPhotoUrl,
+    this.addressId,
   });
 
   factory Order.fromFirestore(DocumentSnapshot doc) {
@@ -68,6 +70,7 @@ class Order {
       patientEmail: data['patientEmail'],
       patientPhone: data['patientPhone'],
       patientPhotoUrl: data['patientPhotoUrl'],
+      addressId: data['addressId'],
     );
   }
 
@@ -86,7 +89,8 @@ class Order {
         if (userDoc.exists) {
           final userData = userDoc.data() as Map<String, dynamic>;
 
-          return order.copyWith(
+          // Create a new order with user details
+          Order updatedOrder = order.copyWith(
             patientName: userData['displayName'] ??
                 userData['name'] ??
                 'Unknown Patient',
@@ -94,6 +98,48 @@ class Order {
             patientPhone: userData['phone'] ?? order.patientPhone,
             patientPhotoUrl: userData['photoURL'] ?? order.patientPhotoUrl,
           );
+
+          // If we have an addressId, try to fetch the address details
+          if (order.addressId != null && order.addressId!.isNotEmpty) {
+            try {
+              final addressDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(order.userId)
+                  .collection('addresses')
+                  .doc(order.addressId)
+                  .get();
+
+              if (addressDoc.exists) {
+                final addressData = addressDoc.data() as Map<String, dynamic>;
+
+                // Get address details
+                final address = addressData['address'] ?? 'No address provided';
+                final additionalInfo = addressData['additionalInfo'] ?? '';
+                final fullAddress = additionalInfo.isNotEmpty
+                    ? '$address (Near $additionalInfo)'
+                    : address;
+
+                // Get location coordinates
+                final latitude = addressData['latitude'];
+                final longitude = addressData['longitude'];
+                GeoPoint? location;
+
+                if (latitude != null && longitude != null) {
+                  location = GeoPoint(latitude, longitude);
+                }
+
+                // Update order with address details
+                updatedOrder = updatedOrder.copyWith(
+                  deliveryAddress: fullAddress,
+                  deliveryLocation: location ?? order.deliveryLocation,
+                );
+              }
+            } catch (e) {
+              print('Error fetching address details: $e');
+            }
+          }
+
+          return updatedOrder;
         }
       } catch (e) {
         print('Error fetching patient details: $e');
@@ -122,6 +168,7 @@ class Order {
       'patientEmail': patientEmail,
       'patientPhone': patientPhone,
       'patientPhotoUrl': patientPhotoUrl,
+      'addressId': addressId,
     };
   }
 
@@ -144,6 +191,7 @@ class Order {
     String? patientEmail,
     String? patientPhone,
     String? patientPhotoUrl,
+    String? addressId,
   }) {
     return Order(
       id: id ?? this.id,
@@ -164,6 +212,7 @@ class Order {
       patientEmail: patientEmail ?? this.patientEmail,
       patientPhone: patientPhone ?? this.patientPhone,
       patientPhotoUrl: patientPhotoUrl ?? this.patientPhotoUrl,
+      addressId: addressId ?? this.addressId,
     );
   }
 }
