@@ -270,6 +270,8 @@ class DeliveryUpdate {
   final String? notes;
   final bool hasProofImage;
   final bool hasSignature;
+  final String? proofImageUrl;
+  final String? signatureUrl;
 
   DeliveryUpdate({
     required this.id,
@@ -280,6 +282,8 @@ class DeliveryUpdate {
     this.notes,
     this.hasProofImage = false,
     this.hasSignature = false,
+    this.proofImageUrl,
+    this.signatureUrl,
   });
 
   factory DeliveryUpdate.fromFirestore(DocumentSnapshot doc) {
@@ -294,6 +298,8 @@ class DeliveryUpdate {
       notes: data['notes'],
       hasProofImage: data['hasProofImage'] ?? false,
       hasSignature: data['hasSignature'] ?? false,
+      proofImageUrl: data['proofImageUrl'],
+      signatureUrl: data['signatureUrl'],
     );
   }
 
@@ -306,6 +312,8 @@ class DeliveryUpdate {
       'notes': notes,
       'hasProofImage': hasProofImage,
       'hasSignature': hasSignature,
+      'proofImageUrl': proofImageUrl,
+      'signatureUrl': signatureUrl,
     };
   }
 }

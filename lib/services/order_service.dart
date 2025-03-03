@@ -194,7 +194,9 @@ class OrderService {
         'updatedBy': currentUserId,
         'notes': notes,
         'hasProofImage': proofImage != null,
-        'hasSignature': signature != null
+        'hasSignature': signature != null,
+        'proofImageUrl': updateFields['proofImageUrl'],
+        'signatureUrl': updateFields['signatureUrl'],
       });
 
       // Commit batch
