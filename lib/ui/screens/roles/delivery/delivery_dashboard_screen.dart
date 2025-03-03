@@ -49,6 +49,14 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
           'Delivery Dashboard',
           style: theme.textTheme.titleLarge,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              context.read<OrderProvider>().init();
+            },
+          ),
+        ],
       ),
       body: Consumer<OrderProvider>(
         builder: (context, orderProvider, _) {
@@ -328,6 +336,7 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
               'No orders found',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
             ),
           ],
@@ -342,111 +351,158 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
         return Padding(
           padding: EdgeInsets.only(bottom: index < orders.length - 1 ? 16 : 0),
           child: CustomCard(
-            child: InkWell(
-              onTap: () => _navigateToOrderDetails(order),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '#${order.id.substring(0, 8)}',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppColors.text,
-                                  ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat.yMMMd().format(order.orderDate),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const Spacer(),
-                        _buildStatusBadge(context, order.status),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                          backgroundImage: order.patientPhotoUrl != null
-                              ? NetworkImage(order.patientPhotoUrl!)
-                              : null,
-                          child: order.patientPhotoUrl == null
-                              ? Text(
-                                  order.patientName[0].toUpperCase(),
-                                  style: const TextStyle(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: AppColors.tertiary.withOpacity(0.3), width: 1),
+              ),
+              child: InkWell(
+                onTap: () => _navigateToOrderDetails(order),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.quaternary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '#${order.id.substring(0, 8)}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                order.patientName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: AppColors.text,
-                                      fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            DateFormat.yMMMd().format(order.orderDate),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
                                     ),
-                              ),
-                              Text(
-                                order.deliveryAddress,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.tertiary.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
+                          const Spacer(),
+                          _buildStatusBadge(context, order.status),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundImage: order.patientPhotoUrl != null
+                                ? NetworkImage(order.patientPhotoUrl!)
+                                : null,
+                            child: order.patientPhotoUrl == null
+                                ? Text(
+                                    order.patientName.isNotEmpty
+                                        ? order.patientName[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  )
+                                : null,
                           ),
-                          child: const Icon(
-                            Icons.medication_outlined,
-                            color: AppColors.primary,
-                            size: 16,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.patientName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: AppColors.text,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  order.deliveryAddress,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${order.medicines.length} medications',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const Spacer(),
-                        Text(
-                          '₹${order.totalAmount.toStringAsFixed(2)}',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: AppColors.tertiary),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiary.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.medication_outlined,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${order.medicines.length} medications',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '₹${order.totalAmount.toStringAsFixed(2)}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.primary,
                                   ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildOrderActionButton(order),
-                  ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildOrderActionButton(order),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -551,6 +607,52 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
     );
   }
 
+  Widget _buildPerformanceCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard(
     BuildContext context, {
     required String title,
@@ -592,52 +694,6 @@ class _DeliveryDashboardScreenState extends State<DeliveryDashboardScreen>
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPerformanceCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: color, size: 16),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
             ),
           ],
         ),

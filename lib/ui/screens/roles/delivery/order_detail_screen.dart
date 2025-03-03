@@ -45,46 +45,61 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         elevation: 0,
         title: Text(
           'Order #${widget.order.id.substring(0, 8)}',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
         ),
         actions: [
           if (widget.order.deliveryLocation != null)
             IconButton(
-              icon: const Icon(Icons.directions),
+              icon: const Icon(Icons.directions, color: AppColors.primary),
               onPressed: _openNavigation,
             ),
         ],
       ),
       body: _isUpdating
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Order status section
-                  _buildStatusSection(),
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            )
+          : Container(
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+              ),
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Order status section
+                    _buildStatusSection(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                  // Patient info section
-                  _buildPatientSection(),
+                    // Patient info section
+                    _buildPatientSection(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                  // Medicines section
-                  _buildMedicinesSection(),
+                    // Medicines section
+                    _buildMedicinesSection(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  // Action buttons
-                  _buildActionButtons(),
+                    // Action buttons
+                    _buildActionButtons(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                  // Delivery history
-                  _buildDeliveryHistory(),
-                ],
+                    // Delivery history
+                    _buildDeliveryHistory(),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
     );
@@ -94,39 +109,55 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final statusColor = _getStatusColor();
 
     return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(_getStatusIcon(), color: statusColor),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Status: ${_getStatusText()}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  if (widget.order.updatedAt != null)
-                    Text(
-                      'Updated: ${DateFormat.yMMMd().add_jm().format(widget.order.updatedAt!)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: AppColors.tertiary.withOpacity(0.3), width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: statusColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      spreadRadius: 2,
                     ),
-                ],
+                  ],
+                ),
+                child: Icon(_getStatusIcon(), color: statusColor, size: 24),
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Status: ${_getStatusText()}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    if (widget.order.updatedAt != null)
+                      Text(
+                        'Updated: ${DateFormat.yMMMd().add_jm().format(widget.order.updatedAt!)}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -134,90 +165,157 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _buildPatientSection() {
     return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Patient Information',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  backgroundImage: widget.order.patientPhotoUrl != null
-                      ? NetworkImage(widget.order.patientPhotoUrl!)
-                      : null,
-                  child: widget.order.patientPhotoUrl == null
-                      ? Text(
-                          widget.order.patientName[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.order.patientName,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      if (widget.order.patientEmail != null)
-                        Text(
-                          widget.order.patientEmail!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                    ],
-                  ),
-                ),
-                if (widget.order.patientPhone != null)
-                  IconButton(
-                    icon: const Icon(Icons.phone, color: AppColors.primary),
-                    onPressed: () => _callPatient(widget.order.patientPhone!),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Delivery Address',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.order.deliveryAddress,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (widget.order.deliveryLocation != null) ...[
-              const SizedBox(height: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: AppColors.tertiary.withOpacity(0.3), width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
+                  Text(
+                    'Patient Information',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                  ),
+                  const Spacer(),
+                  if (widget.order.patientPhone != null)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.quaternary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.phone,
+                            color: AppColors.primary, size: 20),
+                        onPressed: () =>
+                            _callPatient(widget.order.patientPhone!),
+                        tooltip: 'Call Patient',
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.tertiary.withOpacity(0.3),
+                    backgroundImage: widget.order.patientPhotoUrl != null
+                        ? NetworkImage(widget.order.patientPhotoUrl!)
+                        : null,
+                    child: widget.order.patientPhotoUrl == null
+                        ? Text(
+                            widget.order.patientName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: Text(
-                      'Location: ${widget.order.deliveryLocation!.latitude.toStringAsFixed(6)}, ${widget.order.deliveryLocation!.longitude.toStringAsFixed(6)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.order.patientName,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                        if (widget.order.patientEmail != null)
+                          Text(
+                            widget.order.patientEmail!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
                           ),
+                      ],
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.quaternary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on,
+                            size: 18, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Delivery Address',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 26),
+                      child: Text(
+                        widget.order.deliveryAddress,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                    if (widget.order.deliveryLocation != null) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 26),
+                        child: Row(
+                          children: [
+                            Icon(Icons.my_location,
+                                size: 14, color: AppColors.secondary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${widget.order.deliveryLocation!.latitude.toStringAsFixed(6)}, ${widget.order.deliveryLocation!.longitude.toStringAsFixed(6)}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.textSecondary,
+                                      fontFamily: 'Courier',
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -225,87 +323,124 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _buildMedicinesSection() {
     return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Medicines',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: AppColors.tertiary.withOpacity(0.3), width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Medicines',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ...widget.order.medicines.map(_buildMedicineItem),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1, color: AppColors.tertiary),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total Amount',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 16),
-            ...widget.order.medicines.map(_buildMedicineItem),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Amount',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  '₹${widget.order.totalAmount.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
-            ),
-          ],
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '₹${widget.order.totalAmount.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildMedicineItem(Medicine medicine) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.quaternary,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.tertiary.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.tertiary.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.medication_outlined,
               color: AppColors.primary,
-              size: 20,
+              size: 22,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   medicine.medicineName,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   '${medicine.quantity} units - ${medicine.dosage} ${medicine.frequency}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 Text(
                   '${medicine.daysSupply} days supply',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                 ),
               ],
             ),
           ),
-          Text(
-            '₹${medicine.totalPrice.toStringAsFixed(2)}',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.tertiary.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '₹${medicine.totalPrice.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+            ),
           ),
         ],
       ),
@@ -324,49 +459,100 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildStartDeliveryButton() {
-    return ElevatedButton.icon(
-      icon: const Icon(Icons.local_shipping),
-      label: const Text('START DELIVERY'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      onPressed: _startDelivery,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.local_shipping, size: 22),
+        label: const Text('START DELIVERY'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        onPressed: _startDelivery,
+      ),
     );
   }
 
   Widget _buildCompleteDeliveryButton() {
-    return ElevatedButton.icon(
-      icon: const Icon(Icons.check_circle),
-      label: const Text('MARK AS DELIVERED'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      onPressed: _showDeliveryConfirmationDialog,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.check_circle, size: 22),
+        label: const Text('MARK AS DELIVERED'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        onPressed: _showDeliveryConfirmationDialog,
+      ),
     );
   }
 
   Widget _buildViewDeliveryDetailsButton() {
-    return OutlinedButton.icon(
-      icon: const Icon(Icons.info_outline),
-      label: const Text('VIEW DELIVERY DETAILS'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.tertiary, width: 1.5),
       ),
-      onPressed: _showDeliveryDetails,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.info_outline, size: 22),
+        label: const Text('VIEW DELIVERY DETAILS'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: BorderSide.none,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        onPressed: _showDeliveryDetails,
+      ),
     );
   }
 
@@ -377,12 +563,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           stream: orderProvider.getDeliveryUpdates(widget.order.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              );
             }
 
             if (snapshot.hasError) {
               return Center(
-                child: Text('Error: ${snapshot.error}'),
+                child: Text(
+                  'Error: ${snapshot.error}',
+                  style: TextStyle(color: Colors.red[700]),
+                ),
               );
             }
 
@@ -393,20 +586,31 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             }
 
             return CustomCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Delivery History',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    ...updates.map((update) => _buildUpdateItem(update)),
-                  ],
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: AppColors.tertiary.withOpacity(0.3), width: 1),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Delivery History',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                      ),
+                      const SizedBox(height: 20),
+                      ...updates.asMap().entries.map((entry) =>
+                          _buildUpdateItem(
+                              entry.value, entry.key, updates.length)),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -416,48 +620,72 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildUpdateItem(DeliveryUpdate update) {
+  Widget _buildUpdateItem(DeliveryUpdate update, int index, int totalCount) {
     final statusColor = _getStatusColorByName(update.status);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getStatusIconByName(update.status),
-              color: statusColor,
-              size: 16,
-            ),
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: statusColor.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  _getStatusIconByName(update.status),
+                  color: statusColor,
+                  size: 18,
+                ),
+              ),
+              if (index < totalCount - 1)
+                Container(
+                  width: 2,
+                  height: 30,
+                  color: AppColors.tertiary,
+                ),
+            ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   update.status.toUpperCase(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: statusColor,
                       ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   DateFormat.yMMMd().add_jm().format(update.timestamp),
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                 ),
                 if (update.notes != null && update.notes!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.quaternary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Text(
                       update.notes!,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                          ),
                     ),
                   ),
               ],
