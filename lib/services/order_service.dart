@@ -2,14 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:wisecare_staff/core/models/order_model.dart';
 import 'package:wisecare_staff/core/services/cloudinary_service.dart';
 
 class OrderService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
@@ -151,34 +149,20 @@ class OrderService {
 
       // Upload proof image if provided
       if (proofImage != null) {
-        try {
-          // Try to upload to Cloudinary first
-          final response = await _cloudinaryService.uploadFile(
-              proofImage, 'delivery_proofs/$orderId');
-          updateFields['proofImageUrl'] = response.secureUrl;
-        } catch (cloudinaryError) {
-          print('Cloudinary upload failed: $cloudinaryError');
-          // Fallback to Firebase Storage
-          final imageUrl = await _uploadProofImage(orderId, proofImage);
-          updateFields['proofImageUrl'] = imageUrl;
-        }
+        // Upload to Cloudinary
+        final response = await _cloudinaryService.uploadFile(
+            proofImage, 'delivery_proofs/$orderId');
+        updateFields['proofImageUrl'] = response.secureUrl;
       }
 
       // Upload signature if provided
       if (signature != null) {
-        try {
-          // Try to upload to Cloudinary first
-          final fileName =
-              'signature_${DateTime.now().millisecondsSinceEpoch}.png';
-          final response = await _cloudinaryService.uploadImageBytes(
-              signature, 'delivery_proofs/$orderId', fileName);
-          updateFields['signatureUrl'] = response.secureUrl;
-        } catch (cloudinaryError) {
-          print('Cloudinary upload failed: $cloudinaryError');
-          // Fallback to Firebase Storage
-          final signatureUrl = await _uploadSignature(orderId, signature);
-          updateFields['signatureUrl'] = signatureUrl;
-        }
+        // Upload to Cloudinary
+        final fileName =
+            'signature_${DateTime.now().millisecondsSinceEpoch}.png';
+        final response = await _cloudinaryService.uploadImageBytes(
+            signature, 'delivery_proofs/$orderId', fileName);
+        updateFields['signatureUrl'] = response.secureUrl;
       }
 
       // Update order
@@ -220,30 +204,6 @@ class OrderService {
           .map((doc) => DeliveryUpdate.fromFirestore(doc))
           .toList();
     });
-  }
-
-  // Upload proof image to Firebase Storage (fallback method)
-  Future<String> _uploadProofImage(String orderId, File image) async {
-    final storageRef = _storage
-        .ref()
-        .child('delivery_proofs')
-        .child(orderId)
-        .child('proof_${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-    await storageRef.putFile(image);
-    return await storageRef.getDownloadURL();
-  }
-
-  // Upload signature to Firebase Storage (fallback method)
-  Future<String> _uploadSignature(String orderId, Uint8List signature) async {
-    final storageRef = _storage
-        .ref()
-        .child('delivery_proofs')
-        .child(orderId)
-        .child('signature_${DateTime.now().millisecondsSinceEpoch}.png');
-
-    await storageRef.putData(signature);
-    return await storageRef.getDownloadURL();
   }
 
   // Get performance metrics for the current delivery staff
