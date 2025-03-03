@@ -745,6 +745,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _showDeliveryConfirmationDialog() {
+    _proofImage = null;
+    _signature = null;
+    _notesController.clear();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -759,9 +763,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
           padding: EdgeInsets.only(
-            top: 20,
             left: 20,
             right: 20,
+            top: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
           child: SingleChildScrollView(
@@ -770,7 +774,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Complete Delivery',
+                  'Confirm Delivery',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -778,12 +782,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _notesController,
-                  decoration: InputDecoration(
-                    labelText: 'Delivery Notes',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    hintText: 'Add any notes about the delivery...',
+                  decoration: const InputDecoration(
+                    labelText: 'Delivery Notes (Optional)',
+                    border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
                 ),
@@ -793,8 +794,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.camera_alt),
-                        label:
-                            Text(_proofImage == null ? 'Take Photo' : 'Retake'),
+                        label: Text(_proofImage == null
+                            ? 'Take Photo'
+                            : 'Retake Photo'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -886,7 +888,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   const SizedBox(height: 16),
                 ],
                 ElevatedButton(
-                  child: const Text('CONFIRM DELIVERY'),
+                  child: _isUpdating
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('CONFIRM DELIVERY'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -895,10 +906,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _completeDelivery();
-                  },
+                  onPressed: _isUpdating
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          _completeDelivery();
+                        },
                 ),
               ],
             ),
@@ -913,6 +926,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     try {
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+
+      // Show a loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                  'Uploading delivery confirmation...\nThis may take a moment.'),
+            ],
+          ),
+        ),
+      );
+
       await orderProvider.completeDelivery(
         orderId: widget.order.id,
         proofImage: _proofImage,
@@ -921,6 +952,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
 
       if (mounted) {
+        // Close the loading dialog
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Delivery completed successfully!'),
@@ -930,6 +964,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // Close the loading dialog
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
